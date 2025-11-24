@@ -152,9 +152,9 @@ ggplot(summary_data,
 
 ```
 
-It does show a negative effect of daily screen time on mental health, but there is no clear \"tipping point.\" Instead, the decline appears more stepwise, with mental health decreasing gradually across each usage group.
+It does show a negative effect of daily screen time on mental health, but there is no clear "tipping point." Instead, the decline appears more stepwise, with mental health decreasing gradually across each usage group.
 
-The most interesting finding is that the downward trend is evident for both genders, but the decline is notably steeper among female students, especially in the high-usage category, suggesting that excessive screen exposure may have a stronger negative impact on females\' psychological well-being.
+The most interesting finding is that the downward trend is evident for both genders, but the decline is notably steeper among female students, especially in the high-usage category, suggesting that excessive screen exposure may have a stronger negative impact on females' psychological well-being.
 
 To statistically verify the patterns observed in the plot, we conducted separate one-way ANOVAs for male and female students
 
