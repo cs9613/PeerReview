@@ -1,10 +1,20 @@
 ---
 title: "EDLD 651 Draft Data Preparation Script"
 author: "Febe Lin, Ramtin Ranjpour, & James Phillips"
-format: html
+format:
+  html:
+    theme: cosmo         
+    toc: true            
+    code-fold: false
+    code-tools: true
+    highlight-style: github
+    embed-resources: true
+execute:                
+  warning: false
+  message: false
+  echo: true
 editor: visual
 ---
-
 
 ```{r}
 library(rio)
@@ -15,12 +25,146 @@ library(janitor)
 library(skimr)
 ```
 
+# Load the data set
+
 ```{r}
 student_social <- import(here("data", "final_students_social_media.csv"))
+
+head(student_social)
+```
+
+The data is not tidy because the column names (Instagram, TikTok, etc.) are actually values of a variable, not the names of variables themselves.
+
+# Clean the data
+
+```{r}
+tidy_data <- student_social |> 
+  pivot_longer(cols = Instagram : last_col(),
+               names_to ="Most_Used_Platform",
+               values_to = "Avg_Daily_Usage_Hours",
+               values_drop_na = TRUE)
+
+head(tidy_data)
+             
+```
+
+# Explore our questions
+
+Q1: Does sleep deprivation mediate the negative relationship between daily screen time and mental health scores?
+
+H1: Screen time negatively predicts sleep time, which in turn negatively impacts mental health.
+
+```{r}
+# test mental ~ screen time
+model_test <-lm(Mental_Health_Score~Avg_Daily_Usage_Hours,data = tidy_data)
+summary(model_test)
+
+# test sleep hours ~ screen time
+model_path_a <- lm(Sleep_Hours_Per_Night ~ Avg_Daily_Usage_Hours, data = tidy_data)
+summary(model_path_a)
+
+# test mental ~ screen time + sleep hours
+model_full <- lm(Mental_Health_Score ~ Avg_Daily_Usage_Hours + Sleep_Hours_Per_Night, data = tidy_data)
+summary(model_full)
+
+
+#plot
+ggplot(tidy_data,
+       aes(x= Avg_Daily_Usage_Hours, y= Mental_Health_Score))+
+  geom_smooth(model= "lm", se= TRUE)+
+  labs(title = "Relationship between Screen Time and Mental Health")+
+  theme_minimal()+
+  theme(plot.title = element_text(size =10))
+
+
+ggplot(tidy_data,
+       aes(x= Avg_Daily_Usage_Hours, y= Sleep_Hours_Per_Night))+
+  geom_smooth(model= "lm", se= TRUE, color = "red")+
+  labs(title = "Relationship between Screen Time and Sleep hours")+
+  theme_minimal()+
+  theme(plot.title = element_text(size =10))
+
+
+
+```
+
+![](images/mediation_analysis_diagram-01.png)
+
+Based on the result, H1 was supported. For better understand the relationship, we draw a path analysis figure. From this figure we can see that overall, longer screen-time usage significantly harms mental health (coeff = −0.70). This also supports our hypothesis that sleep duration partially mediates this relationship: excessive screen time reduces sleep, which in turn contributes to poorer mental health. However, this is not the whole story. Even after accounting for sleep and ensuring adequate sleep duration, screen overuse still shows a significant direct negative effect on mental health (direct coeff= −0.57), suggesting that excessive screen use may harm mental health through additional mechanisms beyond sleep.
+
+Q2:Is there a critical 'tipping point' in screen usage where sleep duration and mental health exhibit a sharp decline?
+
+-   H2: Students exceeding a threshold of 5 hours per day will report significantly worse outcomes compared to low-usage groups, whereas the difference between low (0\~3) and moderate usage (3\~5)may be minimal. (In my own experience, I use screens for 3--5 hours per day and do not perceive any notable mental-health issues)
+-   H3: However, this pattern may vary by gender, and the differences in outcomes may not be the same across male and female students.
+
+```{r}
+group_data <- tidy_data |> 
+  mutate(Usage_Group = cut(
+      Avg_Daily_Usage_Hours,
+      breaks = c(0, 3, 5, Inf),
+      labels = c("Low (0–3h)", "Moderate (3–5h)", "High (>5h)"))
+      ) 
+
+male_data <- group_data |> 
+  filter(Gender == "Male") |> 
+  select(Gender, Avg_Daily_Usage_Hours, Sleep_Hours_Per_Night,Mental_Health_Score,Usage_Group) 
+
+
+female_data <- group_data |> 
+  filter(Gender == "Female") |> 
+  select(Gender, Avg_Daily_Usage_Hours, Sleep_Hours_Per_Night,Mental_Health_Score,Usage_Group)
 ```
 
 ```{r}
-student_social |> 
-  mean_age = mean(Age)
+
+summary_data <- group_data |>
+  group_by(Gender, Usage_Group) |>
+  summarise(
+    mean_MH = mean(Mental_Health_Score),
+    sd_MH   = sd(Mental_Health_Score),
+    n       = n(),
+    se_MH   = sd_MH / sqrt(n) 
+  ) |>
+  ungroup()
+
+ggplot(summary_data,
+       aes(x = Usage_Group,
+           y = mean_MH,
+           group = Gender,
+           color = Gender)) +
+  geom_point(position = position_dodge(width = 0.2), size = 3) +
+  geom_line(position = position_dodge(width = 0.2)) +
+  geom_errorbar(
+    aes(ymin = mean_MH - se_MH,
+        ymax = mean_MH + se_MH),
+    width = 0.1,
+    position = position_dodge(width = 0.2)
+  ) +
+  labs(
+    x = "Daily Screen Time Group",
+    y = "Mean Mental Health Score",
+    color = "Gender",
+    title = "Mental Health by Screen Time Group and Gender"
+  ) +
+  theme_minimal()
+
+
+
 ```
 
+It does show a negative effect of daily screen time on mental health, but there is no clear \"tipping point.\" Instead, the decline appears more stepwise, with mental health decreasing gradually across each usage group.
+
+The most interesting finding is that the downward trend is evident for both genders, but the decline is notably steeper among female students, especially in the high-usage category, suggesting that excessive screen exposure may have a stronger negative impact on females\' psychological well-being.
+
+To statistically verify the patterns observed in the plot, we conducted separate one-way ANOVAs for male and female students
+
+```{r}
+#one-way ANOVAs
+anova_male <- aov(Mental_Health_Score ~ Usage_Group, data = male_data)
+TukeyHSD(anova_male)
+
+anova_female <- aov(Mental_Health_Score ~ Usage_Group, data = female_data)
+TukeyHSD(anova_female)
+```
+
+The post hoc Tukey tests confirmed significant differences across all usage groups in both genders, with female students showing larger mean declines, particularly between the moderate and high usage levels.
