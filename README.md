@@ -39,22 +39,23 @@ Total 110
 
 Overarching Theme: What is the state of mental health among college students, and how is it impacted by elements such as geographic location, relationship status, social media usage and self-reported addiction level, platform usage, and amount of sleep per night?
 
-*RamtinResearchQ*~1~: Something to do with geographic location? [11p-5a]
+*FebeResearchQ*~1~: RQ1:Does sleep deprivation mediate the negative relationship between daily screen time and mental health scores? H1: Screen time negatively predicts sleep time, which in turn negatively impacts mental health.
 
-*FebeResearchQ*~2~: RQ1:Does sleep deprivation mediate the negative relationship between daily screen time and mental health scores? 
-H1: Screen time negatively predicts sleep time, which in turn negatively impacts mental health.
+*FebeResearchQ*~2~:Is there a critical 'tipping point' in screen usage where sleep duration and mental health exhibit a sharp decline? H2: Students exceeding a threshold of 5 hours per day will report significantly worse outcomes compared to low-usage groups, whereas the difference between low (0\~3) and moderate usage (3\~5)may be minimal. (In my own experience, I use screens for 3–5 hours per day and do not perceive any notable mental-health issues) H3: However, this pattern may vary by gender, and the differences in outcomes may not be the same across male and female students.
 
-RQ2:Is there a critical 'tipping point' in screen usage where sleep duration and mental health exhibit a sharp decline?
-  H2: Students exceeding a threshold of 5 hours per day will report significantly worse outcomes compared to low-usage groups, whereas the difference between low (0~3) and moderate usage (3~5)may be minimal. (In my own experience, I use screens for 3–5 hours per day and do not perceive any notable mental-health issues)
-  H3: However, this pattern may vary by gender, and the differences in outcomes may not be the same across male and female students.
+*JamesResearchQ*~3~: How does primary usage of a specific social media platform impact mental health?
 
-*JamesResearchQ*~3~: Something to do with specific platform usage? [3p-8p]
+*JamesResearchQ*~4~: Do any platforms correlate to lower self-reported mental health statuses?
 
-*RamtinH*~1~:
+*JamesResearchQ*~5~: Do any specific platforms correlate to higher levels of social media addiction?
 
-*FebeH*~2~:
+*RamtinResearchQ*~6~: Something to do with geographic location? [11p-5a]
 
-*JamesH*~3~:
+*FebeH*~1~:
+
+*JamesH*~2~:
+
+*RamtinH*~3~:
 
 *Original Dataset:*
 

@@ -4,7 +4,8 @@ author: "Febe Lin, Ramtin Ranjpour, & James Phillips"
 format:
   html:
     theme: cosmo         
-    toc: true            
+    toc: true 
+    toc-depth: 4           
     code-fold: false
     code-tools: true
     highlight-style: github
@@ -17,12 +18,14 @@ editor: visual
 ---
 
 ```{r}
+#| include: false
 library(rio)
 library(here)
 library(tidyverse)
 library(tidylog)
 library(janitor)
 library(skimr)
+library(knitr)
 ```
 
 # Load the data set
@@ -45,14 +48,17 @@ tidy_data <- student_social |>
                values_drop_na = TRUE)
 
 head(tidy_data)
-             
+
+export(tidy_data, here("data", "tidy_data.csv"))
 ```
 
 # Explore our questions
 
-Q1: Does sleep deprivation mediate the negative relationship between daily screen time and mental health scores?
+## RQ1-RQ2, H1-H3
 
-H1: Screen time negatively predicts sleep time, which in turn negatively impacts mental health.
+*RQ*~1~: Does sleep deprivation mediate the negative relationship between daily screen time and mental health scores?
+
+*H*~1~: Screen time negatively predicts sleep time, which in turn negatively impacts mental health.
 
 ```{r}
 # test mental ~ screen time
@@ -92,10 +98,10 @@ ggplot(tidy_data,
 
 Based on the result, H1 was supported. For better understand the relationship, we draw a path analysis figure. From this figure we can see that overall, longer screen-time usage significantly harms mental health (coeff = −0.70). This also supports our hypothesis that sleep duration partially mediates this relationship: excessive screen time reduces sleep, which in turn contributes to poorer mental health. However, this is not the whole story. Even after accounting for sleep and ensuring adequate sleep duration, screen overuse still shows a significant direct negative effect on mental health (direct coeff= −0.57), suggesting that excessive screen use may harm mental health through additional mechanisms beyond sleep.
 
-Q2:Is there a critical 'tipping point' in screen usage where sleep duration and mental health exhibit a sharp decline?
+*RQ*~2~:Is there a critical 'tipping point' in screen usage where sleep duration and mental health exhibit a sharp decline?
 
--   H2: Students exceeding a threshold of 5 hours per day will report significantly worse outcomes compared to low-usage groups, whereas the difference between low (0\~3) and moderate usage (3\~5)may be minimal. (In my own experience, I use screens for 3--5 hours per day and do not perceive any notable mental-health issues)
--   H3: However, this pattern may vary by gender, and the differences in outcomes may not be the same across male and female students.
+-   *H*~2~: Students exceeding a threshold of 5 hours per day will report significantly worse outcomes compared to low-usage groups, whereas the difference between low (0\~3) and moderate usage (3\~5)may be minimal. (In my own experience, I use screens for 3--5 hours per day and do not perceive any notable mental-health issues)
+-   *H*~3~: However, this pattern may vary by gender, and the differences in outcomes may not be the same across male and female students.
 
 ```{r}
 group_data <- tidy_data |> 
@@ -168,3 +174,140 @@ TukeyHSD(anova_female)
 ```
 
 The post hoc Tukey tests confirmed significant differences across all usage groups in both genders, with female students showing larger mean declines, particularly between the moderate and high usage levels.
+
+## RQ3-RQ5, H4
+
+*RQ*~3~: How does primary usage of a specific social media platform impact mental health?
+
+*H*~4~: Meta-affiliated platforms, such as Facebook and Instagram, will result in a greater impact to mental health compared to other platforms.
+
+```{r}
+#| include: false
+platform_use <- tidy_data |> 
+  mutate(
+    Most_Used_Platform = factor(Most_Used_Platform),
+    Gender = factor(Gender),
+    Academic_Level = factor(Academic_Level),
+    Country = factor(Country)
+  )
+
+str(platform_use)
+summary(platform_use$Most_Used_Platform)
+```
+
+```{r}
+platform_mental_health <- platform_use |> 
+  group_by(Most_Used_Platform) |> 
+  summarize(
+    n = n(),
+    mean_pmh = mean(Mental_Health_Score, na.rm = TRUE),
+    sd_pmh = sd(Mental_Health_Score, na.rm = TRUE)
+  ) |> 
+  arrange(mean_pmh) |> 
+  rename(
+    `Most Used Platform` = Most_Used_Platform,
+    Mean = mean_pmh,
+    `Standard Deviation` = sd_pmh
+  )
+
+platform_mental_health |> 
+  kable(
+    caption = "Mean Mental Health Scores by Platform",
+    digits = 2
+  )
+```
+
+Based on the results in this table, we cannot definitively correlate the use of Meta-owned platforms to lower self-reported mental health scores. *H*~4~ is not supported.
+
+*RQ*~4~: Do any specific social media platforms significantly correlate to lower self-reported mental health statuses?
+
+```{r}
+pu_mean_mh <- mean(platform_use$Mental_Health_Score, na.rm = TRUE)
+
+platform_use <- platform_use |> 
+  mutate(
+    low_mh = if_else(Mental_Health_Score < pu_mean_mh, "Low", "Not Low"),
+    low_mh = factor(low_mh, levels = c("Low", "Not Low"))
+  )
+
+mh_count <- platform_use |> 
+  group_by(Most_Used_Platform, low_mh) |> 
+  summarize(
+    n = n(),
+    .groups = "drop"
+  )
+
+mh_wide <- mh_count |> 
+  pivot_wider(
+    names_from = low_mh,
+    values_from = n,
+    values_fill = 0
+  )
+
+mh_wide <- mh_wide |> 
+  mutate(
+    total = Low + `Not Low`,
+    pct_low = Low / total * 100,
+    pct_not_low = `Not Low` / total * 100
+  ) |> 
+  mutate(
+    pct_low = round(pct_low, 1),
+    pct_not_low = round(pct_not_low, 1)
+  ) |> 
+  rename(
+    `Most Used Platform` = Most_Used_Platform,
+    Total = total,
+    `Low (%)` = pct_low,
+    `Not Low (%)` = pct_not_low
+  )
+
+mh_wide |>
+  select(-Low, -`Not Low`, -Total) |> 
+  kable(
+    caption = "Percentages of Lower Than Average Mental Health Reports by Platform",
+    digits = 3
+  )
+```
+
+An initial glance at this data suggested that the majority of those who primarily use Instagram, KakaoTalk, Snapchat, TikTok, WeChat, and WhatsApp have lower-than-average reported mental health. Using a chi-square test of independence, we sought to measure if these differences reflect a statistically significant relationship instead of chance.
+
+```{r}
+mh_chi <- mh_wide |> 
+  select(Low, `Not Low`) |> 
+  as.matrix()
+
+rownames(mh_chi) <- mh_wide$Most_Used_Platform
+
+mh_chi <- chisq.test(mh_chi)
+
+mh_chi
+```
+
+These results indicated a significant association between primary platform use and reported mental health status (χ² = 226.05, *df* = 11, *p* < .001),
+suggesting that low versus not-low mental health frequencies vary across platforms to a noteworthy degree.
+
+*RQ*~5~: Do any specific platforms correlate to higher levels of social media addiction?
+
+```{r}
+platform_addiction <- platform_use |> 
+  group_by(Most_Used_Platform) |> 
+  summarize(
+    n = n(),
+    mean_addiction = mean(Addicted_Score, na.rm = TRUE),
+    sd_addiction = sd(Addicted_Score, na.rm = TRUE)
+  ) |> 
+  rename(
+    `Most Used Platform` = Most_Used_Platform,
+    `Mean` = mean_addiction,
+    `Standard Deviation` = sd_addiction
+  ) |> 
+  arrange(desc(`Mean`))
+
+platform_addiction |> 
+  kable(
+    caption = "Social Media Addiction by Platform",
+    digits = 2
+  )
+```
+
+The resulting data indicated that those who reported using WhatsApp or Snapchat the most also reported the highest level of addiction to social media (*M~WA~* = 7.46, *SD* = 0.50; *M~S~* = 7.46, *SD* = 0.78), closely followed by those who reported TikTok as their most used platform (*M* = 7.43, *SD* = 1.04). Those who reported using LINE as their most used platform reported the lowest level of addiction to social media (*M* = 3.00, *SD* = 0.00).
