@@ -78,7 +78,9 @@ summary(model_full)
 ggplot(tidy_data,
        aes(x= Avg_Daily_Usage_Hours, y= Mental_Health_Score))+
   geom_smooth(model= "lm", se= TRUE)+
-  labs(title = "Relationship between Screen Time and Mental Health")+
+  labs(x = "Average Screen Time on the Most Used Social Media Platform (hrs)",
+       y = "Mental Health Score (Range 4-9)",
+       title = "Relationship between Screen Time and Mental Health")+
   theme_minimal()+
   theme(plot.title = element_text(size =10))
 
@@ -86,7 +88,9 @@ ggplot(tidy_data,
 ggplot(tidy_data,
        aes(x= Avg_Daily_Usage_Hours, y= Sleep_Hours_Per_Night))+
   geom_smooth(model= "lm", se= TRUE, color = "red")+
-  labs(title = "Relationship between Screen Time and Sleep hours")+
+  labs(x = "Average Screen Time on the Most Used Social Media Platform (hrs)",
+       y = "Sleep per Night (hrs)",
+         title = "Relationship between Screen Time and Sleep hours")+
   theme_minimal()+
   theme(plot.title = element_text(size =10))
 
@@ -215,7 +219,7 @@ platform_mental_health |>
   )
 ```
 
-Based on the results in this table, we cannot definitively correlate the use of Meta-owned platforms to lower self-reported mental health scores. *H*~4~ is not supported.
+Based on the results in this table, we cannot definitively correlate the use of Meta-owned platforms to lower self-reported mental health scores. *H*~4~ is not supported. <!--# It seems like you didn't include any t-test to compare the means for meta-owned platform vs others. The first step would be group the most-used platform based on this criteria. Would it also make sense to group some of the other ones based on ownership? Alternatively, it could be easier if it's just meta-owned vs all others, then you can simply conduct a t-test to compare the group mean of meta-owned platform vs others. -->
 
 *RQ*~4~: Do any specific social media platforms significantly correlate to lower self-reported mental health statuses?
 
@@ -265,6 +269,7 @@ mh_wide |>
     caption = "Percentages of Lower Than Average Mental Health Reports by Platform",
     digits = 3
   )
+# It took me a while to figure out what was the goal for this section of code, for reproducibility purpose, it will be great to include a short description for the goal of each step and this code chunk.
 ```
 
 An initial glance at this data suggested that the majority of those who primarily use Instagram, KakaoTalk, Snapchat, TikTok, WeChat, and WhatsApp have lower-than-average reported mental health. Using a chi-square test of independence, we sought to measure if these differences reflect a statistically significant relationship instead of chance.
